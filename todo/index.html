@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>To-Do List</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      margin-top: 50px;
+    }
+
+    .todo-container {
+      background: white;
+      padding: 20px;
+      width: 350px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    input {
+      width: 75%;
+      padding: 8px;
+    }
+
+    button {
+      padding: 8px;
+      cursor: pointer;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      cursor: pointer;
+    }
+
+    li.completed {
+      text-decoration: line-through;
+      color: gray;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="todo-container">
+    <h2>To-Do List</h2>
+    <input id="taskInput" placeholder="New task">
+    <button onclick="addTask()">Add</button>
+    <ul id="taskList"></ul>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:3000/todos";
+
+    // Load tasks
+    async function loadTasks() {
+      const res = await fetch(API_URL);
+      const todos = await res.json();
+      const list = document.getElementById("taskList");
+      list.innerHTML = "";
+
+      todos.forEach(todo => {
+        const li = document.createElement("li");
+        li.textContent = todo.text;
+        li.className = todo.completed ? "completed" : "";
+        li.onclick = () => toggleTask(todo.id);
+
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "❌";
+        delBtn.onclick = (e) => {
+          e.stopPropagation();
+          deleteTask(todo.id);
+        };
+
+        li.appendChild(delBtn);
+        list.appendChild(li);
+      });
+    }
+
+    // Add new task
+    async function addTask() {
+      const input = document.getElementById("taskInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      input.value = "";
+      loadTasks();
+    }
+
+    // Toggle complete
+    async function toggleTask(id) {
+      await fetch(`${API_URL}/${id}`, { method: "PUT" });
+      loadTasks();
+    }
+
+    // Delete task
+    async function deleteTask(id) {
+      await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      loadTasks();
+    }
+
+    loadTasks();
+  </script>
+
+</body>
+</html>
