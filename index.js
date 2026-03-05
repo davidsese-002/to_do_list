@@ -1,53 +1,28 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const cors = require("cors");
 
+const authRoutes = require("./routes/auth.routes");
+const todoRoutes = require("./routes/todo.routes");
+
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-// Temporary in-memory storage
-let todos = [];
-let currentId = 1;
+mongoose.connect("mongodb://127.0.0.1:27017/todo_api")
+  .then(() => console.log("MongoDB Connected"))
+  .catch((err) => console.log(err));
 
-// Get all todos
-app.get("/todos", (req, res) => {
-  res.json(todos);
+app.use("/api/auth", authRoutes);
+app.use("/api/todos", todoRoutes);
+
+app.get("/", (req, res) => {
+  res.send("API Running");
 });
 
-// Add a todo
-app.post("/todos", (req, res) => {
-  const { text } = req.body;
+const PORT = 5000;
 
-  if (!text) {
-    return res.status(400).json({ error: "Text is required" });
-  }
-
-  const todo = {
-    id: currentId++,
-    text,
-    completed: false
-  };
-
-  todos.push(todo);
-  res.status(201).json(todo);
-});
-
-// Update todo (mark complete)
-app.put("/todos/:id", (req, res) => {
-  const todo = todos.find(t => t.id == req.params.id);
-  if (!todo) return res.status(404).json({ error: "Todo not found" });
-
-  todo.completed = !todo.completed;
-  res.json(todo);
-});
-
-// Delete todo
-app.delete("/todos/:id", (req, res) => {
-  todos = todos.filter(t => t.id != req.params.id);
-  res.json({ message: "Todo deleted" });
-});
-
-// Start server
-app.listen(3000, () => {
-  console.log("✅ Server running at http://localhost:3000");
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

@@ -1,7 +1,7 @@
 {
-  "name": "todo",
+  "name": "todo_api",
   "version": "1.0.0",
-  "description": "my to do list",
+  "description": "Backend API for Todo App",
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
@@ -9,12 +9,13 @@
     "dev": "nodemon index.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.2.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
-  },
-  "author": "",
-  "license": "ISC"
+    "nodemon": "^3.1.11"
+  }
 }

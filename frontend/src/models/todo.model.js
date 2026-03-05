@@ -4,13 +4,16 @@ const todoSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: true,
-      trim: true,
+      required: true
     },
     completed: {
       type: Boolean,
-      default: false,
+      default: false
     },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    }
   },
   { timestamps: true }
 );
