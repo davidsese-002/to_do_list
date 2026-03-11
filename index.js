@@ -1,9 +1,10 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+require("dotenv").config();
 
-const authRoutes = require("./frontend/src/routes/auth.routes");
-const todoRoutes = require("./frontend/src/routes/todo.routes");
+const authRoutes = require("./src/routes/auth.routes");
+const todoRoutes = require("./src/routes/todo.routes");
 
 const app = express();
 
@@ -13,7 +14,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/todos", todoRoutes);
 
-mongoose.connect("mongodb://127.0.0.1:27017/todo_db")
+mongoose.connect(process.env.MONGO_URI)
 .then(() => {
     console.log("MongoDB Connected");
 })
@@ -21,6 +22,6 @@ mongoose.connect("mongodb://127.0.0.1:27017/todo_db")
     console.log(err);
 });
 
-app.listen(5000, () => {
-    console.log("Server running on port 5000");
+app.listen(process.env.PORT, () => {
+    console.log(`Server running on port ${process.env.PORT}`);
 });
