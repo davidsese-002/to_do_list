@@ -5,23 +5,27 @@ require("dotenv").config();
 
 const authRoutes = require("./src/routes/auth.routes");
 const todoRoutes = require("./src/routes/todo.routes");
+const errorMiddleware = require("./src/middleware/error.middleware");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:3000"
+}));
+
 app.use(express.json());
+
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log("MongoDB connected"))
+.catch(err => console.log(err));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/todos", todoRoutes);
 
-mongoose.connect(process.env.MONGO_URI)
-.then(() => {
-    console.log("MongoDB Connected");
-})
-.catch((err) => {
-    console.log(err);
-});
+app.use(errorMiddleware);
 
-app.listen(process.env.PORT, () => {
-    console.log(`Server running on port ${process.env.PORT}`);
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
