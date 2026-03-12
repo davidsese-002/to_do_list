@@ -1,124 +1,239 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>To-Do List</title>
+  <title>Todo App</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      display: flex;
-      justify-content: center;
-      margin-top: 50px;
+    body{
+      font-family: Arial;
+      max-width: 600px;
+      margin: 40px auto;
     }
 
-    .todo-container {
-      background: white;
-      padding: 20px;
-      width: 350px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    input{
+      padding:8px;
+      margin:5px;
     }
 
-    h2 {
-      text-align: center;
+    button{
+      padding:8px;
+      cursor:pointer;
     }
 
-    input {
-      width: 75%;
-      padding: 8px;
+    li{
+      margin:10px 0;
     }
 
-    button {
-      padding: 8px;
-      cursor: pointer;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    li {
-      display: flex;
-      justify-content: space-between;
-      padding: 6px 0;
-      cursor: pointer;
-    }
-
-    li.completed {
+    .done{
       text-decoration: line-through;
       color: gray;
     }
+
+    #app{
+      display:none;
+    }
   </style>
 </head>
+
 <body>
 
-  <div class="todo-container">
-    <h2>To-Do List</h2>
-    <input id="taskInput" placeholder="New task">
-    <button onclick="addTask()">Add</button>
-    <ul id="taskList"></ul>
-  </div>
+<h1>Todo App</h1>
 
-  <script>
-    const API_URL = "http://localhost:3000/todos";
+<!-- AUTH -->
+<div id="auth">
 
-    // Load tasks
-    async function loadTasks() {
-      const res = await fetch(API_URL);
-      const todos = await res.json();
-      const list = document.getElementById("taskList");
-      list.innerHTML = "";
+<h3>Register</h3>
 
-      todos.forEach(todo => {
-        const li = document.createElement("li");
-        li.textContent = todo.text;
-        li.className = todo.completed ? "completed" : "";
-        li.onclick = () => toggleTask(todo.id);
+<input id="regName" placeholder="Name">
+<input id="regEmail" placeholder="Email">
+<input id="regPassword" type="password" placeholder="Password">
+<button onclick="register()">Register</button>
 
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "❌";
-        delBtn.onclick = (e) => {
-          e.stopPropagation();
-          deleteTask(todo.id);
-        };
+<h3>Login</h3>
 
-        li.appendChild(delBtn);
-        list.appendChild(li);
-      });
+<input id="loginEmail" placeholder="Email">
+<input id="loginPassword" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+
+</div>
+
+<!-- TODO APP -->
+<div id="app">
+
+<h3>Create Todo</h3>
+
+<input id="todoInput" placeholder="New todo">
+<button onclick="createTodo()">Add</button>
+
+<h3>Your Todos</h3>
+
+<ul id="todoList"></ul>
+
+<button onclick="logout()">Logout</button>
+
+</div>
+
+
+<script>
+
+const API = "http://localhost:3000/api";
+
+let token = localStorage.getItem("token");
+
+if(token){
+  showApp();
+}
+
+
+function showApp(){
+  document.getElementById("auth").style.display="none";
+  document.getElementById("app").style.display="block";
+  loadTodos();
+}
+
+
+function logout(){
+  localStorage.removeItem("token");
+  location.reload();
+}
+
+
+async function register(){
+
+  const name = document.getElementById("regName").value;
+  const email = document.getElementById("regEmail").value;
+  const password = document.getElementById("regPassword").value;
+
+  const res = await fetch(API+"/auth/register",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({name,email,password})
+  });
+
+  const data = await res.json();
+
+  if(data.token){
+    localStorage.setItem("token",data.token);
+    token=data.token;
+    showApp();
+  }else{
+    alert(JSON.stringify(data));
+  }
+
+}
+
+
+async function login(){
+
+  const email = document.getElementById("loginEmail").value;
+  const password = document.getElementById("loginPassword").value;
+
+  const res = await fetch(API+"/auth/login",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({email,password})
+  });
+
+  const data = await res.json();
+
+  if(data.token){
+    localStorage.setItem("token",data.token);
+    token=data.token;
+    showApp();
+  }else{
+    alert(JSON.stringify(data));
+  }
+
+}
+
+
+async function loadTodos(){
+
+  const res = await fetch(API+"/todos",{
+    headers:{
+      "Authorization":"Bearer "+token
     }
+  });
 
-    // Add new task
-    async function addTask() {
-      const input = document.getElementById("taskInput");
-      const text = input.value.trim();
-      if (!text) return;
+  const todos = await res.json();
 
-      await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
-      });
+  const list = document.getElementById("todoList");
+  list.innerHTML="";
 
-      input.value = "";
-      loadTasks();
+  todos.forEach(todo=>{
+
+    const li=document.createElement("li");
+
+    li.className=todo.completed ? "done":"";
+
+    li.innerHTML=`
+      ${todo.title}
+      <button onclick="toggleTodo('${todo._id}',${todo.completed})">✔</button>
+      <button onclick="deleteTodo('${todo._id}')">❌</button>
+    `;
+
+    list.appendChild(li);
+
+  });
+
+}
+
+
+async function createTodo(){
+
+  const title = document.getElementById("todoInput").value;
+
+  await fetch(API+"/todos",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization":"Bearer "+token
+    },
+    body:JSON.stringify({title})
+  });
+
+  document.getElementById("todoInput").value="";
+
+  loadTodos();
+
+}
+
+
+async function toggleTodo(id,completed){
+
+  await fetch(API+"/todos/"+id,{
+    method:"PUT",
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization":"Bearer "+token
+    },
+    body:JSON.stringify({
+      completed:!completed
+    })
+  });
+
+  loadTodos();
+
+}
+
+
+async function deleteTodo(id){
+
+  await fetch(API+"/todos/"+id,{
+    method:"DELETE",
+    headers:{
+      "Authorization":"Bearer "+token
     }
+  });
 
-    // Toggle complete
-    async function toggleTask(id) {
-      await fetch(`${API_URL}/${id}`, { method: "PUT" });
-      loadTasks();
-    }
+  loadTodos();
 
-    // Delete task
-    async function deleteTask(id) {
-      await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-      loadTasks();
-    }
+}
 
-    loadTasks();
-  </script>
+</script>
 
 </body>
 </html>
