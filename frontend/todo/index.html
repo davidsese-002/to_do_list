@@ -2,123 +2,59 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>To-Do List</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      display: flex;
-      justify-content: center;
-      margin-top: 50px;
-    }
+  <title>Todo App</title>
 
-    .todo-container {
-      background: white;
-      padding: 20px;
-      width: 350px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-      text-align: center;
-    }
-
-    input {
-      width: 75%;
-      padding: 8px;
-    }
-
-    button {
-      padding: 8px;
-      cursor: pointer;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    li {
-      display: flex;
-      justify-content: space-between;
-      padding: 6px 0;
-      cursor: pointer;
-    }
-
-    li.completed {
-      text-decoration: line-through;
-      color: gray;
-    }
-  </style>
+  <!-- Link CSS -->
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-  <div class="todo-container">
-    <h2>To-Do List</h2>
-    <input id="taskInput" placeholder="New task">
-    <button onclick="addTask()">Add</button>
-    <ul id="taskList"></ul>
+<div class="container">
+
+  <h1>Todo App</h1>
+
+  <!-- AUTH -->
+  <div id="auth">
+
+    <h2>Register</h2>
+
+    <input id="regName" placeholder="Name">
+    <input id="regEmail" placeholder="Email">
+    <input id="regPassword" type="password" placeholder="Password">
+
+    <button id="registerBtn">Register</button>
+
+    <h2>Login</h2>
+
+    <input id="loginEmail" placeholder="Email">
+    <input id="loginPassword" type="password" placeholder="Password">
+
+    <button id="loginBtn">Login</button>
+
   </div>
 
-  <script>
-    const API_URL = "http://localhost:3000/todos";
+  <!-- APP -->
+  <div id="app" class="hidden">
 
-    // Load tasks
-    async function loadTasks() {
-      const res = await fetch(API_URL);
-      const todos = await res.json();
-      const list = document.getElementById("taskList");
-      list.innerHTML = "";
+    <div class="header">
+      <h2>Your Todos</h2>
+      <button id="logoutBtn">Logout</button>
+    </div>
 
-      todos.forEach(todo => {
-        const li = document.createElement("li");
-        li.textContent = todo.text;
-        li.className = todo.completed ? "completed" : "";
-        li.onclick = () => toggleTask(todo.id);
+    <div class="todo-input">
+      <input id="todoInput" placeholder="New todo">
+      <button id="addTodoBtn">Add</button>
+    </div>
 
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "❌";
-        delBtn.onclick = (e) => {
-          e.stopPropagation();
-          deleteTask(todo.id);
-        };
+    <ul id="todoList"></ul>
 
-        li.appendChild(delBtn);
-        list.appendChild(li);
-      });
-    }
+  </div>
 
-    // Add new task
-    async function addTask() {
-      const input = document.getElementById("taskInput");
-      const text = input.value.trim();
-      if (!text) return;
+</div>
 
-      await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
-      });
-
-      input.value = "";
-      loadTasks();
-    }
-
-    // Toggle complete
-    async function toggleTask(id) {
-      await fetch(`${API_URL}/${id}`, { method: "PUT" });
-      loadTasks();
-    }
-
-    // Delete task
-    async function deleteTask(id) {
-      await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-      loadTasks();
-    }
-
-    loadTasks();
-  </script>
+<!-- Link JS -->
+<script src="script.js"></script>
 
 </body>
 </html>

@@ -1,53 +1,140 @@
-const express = require("express");
-const cors = require("cors");
+const API = "http://localhost:3000/api";
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+let token = localStorage.getItem("token");
 
-// Temporary in-memory storage
-let todos = [];
-let currentId = 1;
+const authDiv = document.getElementById("auth");
+const appDiv = document.getElementById("app");
+const todoList = document.getElementById("todoList");
 
-// Get all todos
-app.get("/todos", (req, res) => {
-  res.json(todos);
-});
+// Buttons
+document.getElementById("registerBtn").addEventListener("click", register);
+document.getElementById("loginBtn").addEventListener("click", login);
+document.getElementById("logoutBtn").addEventListener("click", logout);
+document.getElementById("addTodoBtn").addEventListener("click", createTodo);
 
-// Add a todo
-app.post("/todos", (req, res) => {
-  const { text } = req.body;
+if (token) showApp();
 
-  if (!text) {
-    return res.status(400).json({ error: "Text is required" });
+function showApp() {
+  authDiv.classList.add("hidden");
+  appDiv.classList.remove("hidden");
+  loadTodos();
+}
+
+function logout() {
+  localStorage.removeItem("token");
+  location.reload();
+}
+
+// REGISTER
+async function register() {
+  const name = regName.value;
+  const email = regEmail.value;
+  const password = regPassword.value;
+
+  const res = await fetch(API + "/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password })
+  });
+
+  const data = await res.json();
+
+  if (data.token) {
+    localStorage.setItem("token", data.token);
+    token = data.token;
+    showApp();
+  } else {
+    alert("Registration failed");
   }
+}
 
-  const todo = {
-    id: currentId++,
-    text,
-    completed: false
-  };
+// LOGIN
+async function login() {
+  const email = loginEmail.value;
+  const password = loginPassword.value;
 
-  todos.push(todo);
-  res.status(201).json(todo);
-});
+  const res = await fetch(API + "/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
 
-// Update todo (mark complete)
-app.put("/todos/:id", (req, res) => {
-  const todo = todos.find(t => t.id == req.params.id);
-  if (!todo) return res.status(404).json({ error: "Todo not found" });
+  const data = await res.json();
 
-  todo.completed = !todo.completed;
-  res.json(todo);
-});
+  if (data.token) {
+    localStorage.setItem("token", data.token);
+    token = data.token;
+    showApp();
+  } else {
+    alert("Login failed");
+  }
+}
 
-// Delete todo
-app.delete("/todos/:id", (req, res) => {
-  todos = todos.filter(t => t.id != req.params.id);
-  res.json({ message: "Todo deleted" });
-});
+// LOAD TODOS
+async function loadTodos() {
+  const res = await fetch(API + "/todos", {
+    headers: { Authorization: "Bearer " + token }
+  });
 
-// Start server
-app.listen(3000, () => {
-  console.log("✅ Server running at http://localhost:3000");
-});
+  const todos = await res.json();
+
+  todoList.innerHTML = "";
+
+  todos.forEach(todo => {
+    const li = document.createElement("li");
+
+    li.innerHTML = `
+      <span class="${todo.completed ? "done" : ""}">
+        ${todo.title}
+      </span>
+
+      <div>
+        <button onclick="toggleTodo('${todo._id}', ${todo.completed})">✔</button>
+        <button onclick="deleteTodo('${todo._id}')">❌</button>
+      </div>
+    `;
+
+    todoList.appendChild(li);
+  });
+}
+
+// CREATE
+async function createTodo() {
+  const title = todoInput.value;
+
+  await fetch(API + "/todos", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ title })
+  });
+
+  todoInput.value = "";
+  loadTodos();
+}
+
+// TOGGLE
+async function toggleTodo(id, completed) {
+  await fetch(API + "/todos/" + id, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ completed: !completed })
+  });
+
+  loadTodos();
+}
+
+// DELETE
+async function deleteTodo(id) {
+  await fetch(API + "/todos/" + id, {
+    method: "DELETE",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  loadTodos();
+}
